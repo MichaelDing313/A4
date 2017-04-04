@@ -11,7 +11,7 @@ import gym
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.layers import *
-
+import matplotlib.pyplot as plt
 import sys
 
 #########################################
@@ -94,18 +94,19 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 # numer of state to remember? and get maximum iteration for that model
-MEMORY=25
+MEMORY=50
 MAX_STEPS = env.spec.tags.get('wrapper_config.TimeLimit.max_episode_steps')
 
 # Run the enviorment
 track_returns = []
 plt_returns = []
 plt_avg_returns = []
+plt_steps = []
 plt_sw = []
 plt_x = []
 
 
-for ep in range(16384):
+for ep in range(1000):
     obs = env.reset()
 
     G = 0
@@ -117,7 +118,7 @@ for ep in range(16384):
     I = 1
     while not done:
         ep_states.append(obs)
-        env.render()
+        #env.render()
         action =  sess.run([pi_sample], feed_dict={x:[obs]})[0][0]
     
         obs, reward, done, info = env.step(np.argmax(list(action)))
@@ -143,6 +144,8 @@ for ep in range(16384):
     track_returns = track_returns[-MEMORY:]
     mean_return = np.mean(track_returns)
     plt_avg_returns.append(mean_return)
+    plt_steps.append(t)
+    plt_x.append(ep)
     plt_returns.append(G)
 
     with tf.variable_scope('sigmas', reuse=True):
@@ -156,13 +159,13 @@ sess.close()
 
 try:
     plt.figure()
-    plt.plot(plot_x, plot_train, '-g', label='Training')
-    plt.plot(plot_x, plot_vali, '-r', label='Validation')
-    plt.plot(plot_x, plot_test, '-b', label='Test')
-    plt.xlabel("Training Iterations")
-    plt.ylabel("Accuracy")
-    plt.title("Traning Curve for Single Hidden Layer NN, lam = {}".format(lam))
-    plt.legend(loc='bottom right')
+    plt.plot(plt_x, plt_avg_returns, '-g', label='Smooth Returns')
+    #plt.plot(plt_x, plt_returns, '-r', label='Returns')
+    #plt.plot(plt_x, plt_steps, '-b', label='Steps Alive')
+    plt.xlabel("Episodes")
+    plt.ylabel("Value")
+    plt.title("Training Result over Episodes")
+    plt.legend(loc='lower right')
     plt.show()
 except:
     print("plot fail")
